@@ -1,0 +1,18 @@
+.App {
+  text-align: center;
+  margin-top: 20vh;
+}
+
+.App-header {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+}
+
+.table {
+  font-size: calc(10px + 2vmin);
+  margin: 0 100px;
+}
