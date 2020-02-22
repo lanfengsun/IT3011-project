@@ -20,6 +20,14 @@ class APIClient {
         return this.perform('get', url)
     }
 
+    calculate(opponent, myTeam) {
+        return this.perform(
+            'post',
+            '/calculate',
+            { opponent, myTeam }
+        );
+    }
+
     async perform(method, url, data) {
         try {
             const resp = await client({

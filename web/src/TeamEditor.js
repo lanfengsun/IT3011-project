@@ -25,7 +25,6 @@ export default function TeamEditor(props) {
 
     const handleChange = event => {
         const player = event.target.value;
-        console.log(player);
         setSelected(player);
         onAddPlayer(parseInt(player));
     };

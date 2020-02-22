@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { Grid, Button, TextField } from '@material-ui/core';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import Title from './Title';
+import { Grid, Button, CircularProgress } from '@material-ui/core';
 import TeamEditor from './TeamEditor';
+import Result from './Result';
 import APIClient from './api';
 
+const MIN_TEAM_SIZE = 5;
+const OPPO_MAX_TEAM_SIZE = 5;
+const MY_MAX_TEAM_SIZE = 12;
 
 function App() {
   const [players, setPlayers] = useState(new Map());
   const [loading, setLoading] = useState(true);
+  const [clickCalculate, setClickCalculate] = useState(false);
   const [opponent, setOpponent] = useState([]);
   const [team, setTeam] = useState([]);
+  const [result, setResult] = useState([]);
+  const apiClient = new APIClient();
 
   useEffect(() => {
     const apiClient = new APIClient();
@@ -24,7 +24,6 @@ function App() {
       try {
         const data = await apiClient.getPlayers(1000);
         setPlayers(new Map(data.map(p => [p.id, p])));
-        setLoading(false);
       } catch (err) {
         console.log(err);
       }
@@ -44,56 +43,50 @@ function App() {
     }
   };
 
+  const onClickCalculate = async () => {
+    setResult([]);
+    setLoading(true);
+    setClickCalculate(true);
+
+    try {
+      const data = await apiClient.calculate(opponent, team);
+      setResult(data);
+    } catch (err) {
+      console.log(err);
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="App" >
       <Grid container>
         <Grid item xs={6}>
           <TeamEditor
-            title="Your opponent"
+            title="My opponent"
             allPlayers={players}
-            teamSize={5}
+            teamSize={OPPO_MAX_TEAM_SIZE}
             onAddPlayer={addOpponent}
             team={opponent} />
         </Grid>
         <Grid item xs={6}>
           <TeamEditor
-            title="Your team"
+            title="My team"
             allPlayers={players}
-            teamSize={12}
+            teamSize={MY_MAX_TEAM_SIZE}
             onAddPlayer={addMyTeam}
             team={team} />
         </Grid>
       </Grid>
-      <Button variant="contained" color="primary" disabled={opponent.length < 5 || team.length < 5}>Calculate</Button>
-
-      {/* {loading ? <CircularProgress /> :
-        <div className="table">
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Player ID</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Points/min</TableCell>
-                <TableCell>Rebounds/min</TableCell>
-                <TableCell>Assists/min</TableCell>
-                <TableCell>Minutes played</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {players.map(player => (
-                <TableRow key={player.id}>
-                  <TableCell>{player.id}</TableCell>
-                  <TableCell>{player.name}</TableCell>
-                  <TableCell>{player.points}</TableCell>
-                  <TableCell>{player.rebounds}</TableCell>
-                  <TableCell>{player.assists}</TableCell>
-                  <TableCell>{player.min_played}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      } */}
+      <Button
+        variant="contained"
+        color="primary"
+        disabled={opponent.length < MIN_TEAM_SIZE || team.length < MIN_TEAM_SIZE}
+        onClick={onClickCalculate}
+      >
+        Calculate
+      </Button>
+      {clickCalculate && loading && <CircularProgress />}
+      {result.length > 0 && <Result result={result} />}
     </div>
   );
 }

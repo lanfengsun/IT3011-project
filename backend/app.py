@@ -1,4 +1,5 @@
 import os
+import random
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from flask import Flask, jsonify, request
@@ -19,11 +20,15 @@ def hello_world():
 
 
 def run_query(query):
-    with psycopg2.connect(**db_params) as conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute(query)
-            res = cursor.fetchall()
-    return jsonify(res)
+    try:
+        with psycopg2.connect(**db_params) as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute(query)
+                res = cursor.fetchall()
+        return jsonify(res)
+    except Exception as err:
+        print("[ERROR]", err)
+        return {}
 
 
 @app.route('/player/id/<player_id>')
@@ -56,3 +61,26 @@ def get_players():
             LIMIT %d
             """ % (order_by, limit)
     return run_query(query)
+
+
+@app.route('/calculate', methods=['POST'])
+@cross_origin()
+def calculate_line_up():
+    data = request.json
+    opponent = data.get('opponent', [])
+    my_team = data.get('myTeam', [])
+    player_ids = calculate_player_ids(opponent, my_team)
+    query = """
+            SELECT * FROM nba_players
+            WHERE id IN (%s)
+            ORDER BY name
+            """ % ','.join(str(pid) for pid in player_ids)
+    return run_query(query)
+
+
+def calculate_player_ids(opponent, my_team):
+    team_size = 5
+    if len(my_team) < team_size:
+        print("[WARNING] len(my_team) is %d < %d" % (len(my_team), team_size))
+        return my_team
+    return random.sample(my_team, team_size)
